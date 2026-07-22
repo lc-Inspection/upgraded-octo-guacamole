@@ -2982,6 +2982,26 @@ function getPerformanceLevelLabel(performans) {
   return t.perf_verypoor;
 }
 
+// ── "İyi" SEVİYESİ İÇİN EK ŞART: Mesaisiz Günlük Ort. ≥ 400 ─────────────
+// Bir inspector'ın performansı %85'in üzerinde olsa bile, normal saatte
+// (overtime hariç) günlük ortalama kontrol adedi 400'ün altındaysa "İyi"
+// sayılmaz — bir alt seviyeye (Orta) düşürülür. Bu, hızlı görünen ama
+// gerçekte az iş yapan (örn. çok az gün çalışıp yüksek % çıkan) durumları
+// filtrelemek için eklendi. Dashboard kartı VE performans seviyesi popup'ı
+// (showPerfSeviyeDetay) bu fonksiyonu kullanarak TUTARLI kalır.
+function getEfektifPerfSeviye(inspector, performansVal) {
+  const gunSayisi   = inspector.gunSayisi || 0;
+  const normalAdet  = (inspector.adet || 0) - (inspector.toplamOvertimeAdet || 0);
+  const gunlukOrtNormal = gunSayisi > 0 ? Math.round(normalAdet / gunSayisi) : 0;
+  const demoted = (performansVal >= 85 && gunlukOrtNormal < 400);
+  return {
+    cls: demoted ? 'perf-average' : getPerformanceClass(performansVal),
+    label: demoted ? (translations[currentLang]||translations.tr).perf_average : getPerformanceLevelLabel(performansVal),
+    demoted,
+    gunlukOrtNormal
+  };
+}
+
 function fmtSnKisa(sn) {
   if (!sn) return '—';
   const s = Math.round(sn);
@@ -3505,10 +3525,11 @@ function renderInspectorCards() {
       ? Math.round(hamPerfDuzeltilmis * (100 / currentHedef))
       : null;
     const performansVal = duzPerf ?? 0;
-    const performansClass = getPerformanceClass(performansVal);
+    const _efektifSeviye = getEfektifPerfSeviye(inspector, performansVal);
+    const performansClass = _efektifSeviye.cls;
     const performansText = duzPerf !== null ? duzPerf + '%' : '—';
     const progressAngle = Math.min(360, (performansVal / 100) * 360);
-    const progressColor = getProgressColor(performansVal);
+    const progressColor = _efektifSeviye.demoted ? '#F57F17' : getProgressColor(performansVal);
     
     const ini = inspector.ins.split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
     const klasmanCount = Object.keys(inspector.klasmanlar).length;
@@ -3535,7 +3556,7 @@ function renderInspectorCards() {
       return `${gunSayisi} ${(translations[currentLang]||translations.tr).days_x_formula.replace('{h}', mesaiSaat)}${overtimeStr}`;
     })();
 
-    const performansSeviyesi = getPerformanceLevelLabel(performansVal);
+    const performansSeviyesi = _efektifSeviye.label;
 
     const klasmanRowsHtml = Object.entries(inspector.klasmanlar).map(([klasman, data]) => {
       const hizPerf = (data.hizPerf !== null && data.hizPerf !== undefined) ? data.hizPerf : null;
@@ -3583,6 +3604,7 @@ function renderInspectorCards() {
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase" data-i18n="adj_perf_label">Düz. Performans</div>
             <div style="font-size:9px;color:${progressColor};font-weight:600;margin-top:1px">${performansSeviyesi}</div>
+            ${_efektifSeviye.demoted ? `<div style="font-size:8px;color:#F57F17;margin-top:2px;max-width:120px;line-height:1.3">⚠️ İyi eşiğini geçti ama Mesaisiz Günlük Ort. (${formatTR(_efektifSeviye.gunlukOrtNormal)}) &lt;400 olduğu için Orta'ya düşürüldü</div>` : ''}
           </div>
         </div>
 
