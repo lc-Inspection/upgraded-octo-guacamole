@@ -94,11 +94,6 @@
     </div>
 
     <div class="sb-label" data-i18n="nav_management">Yönetim</div>
-    <div class="nav-item" id="nav-klasmanlar" onclick="requirePassword(this)">
-      <span class="nav-icon">📦</span>
-      <span data-i18n="nav_klasman_mgmt">Klasman Yönetimi</span>
-      <span class="nav-count" id="nav-kl-count">0</span>
-    </div>
     <div class="nav-item" id="nav-kullanicilar" onclick="showPage('kullanicilar', this)">
       <span class="nav-icon">👥</span>
       <span data-i18n="nav_user_mgmt">Kullanıcı Yönetimi</span>
@@ -338,157 +333,6 @@
       </div>
     </div>
 
-    <!-- ══════════ KLASMAN YÖNETİMİ ══════════ -->
-    <div id="page-klasmanlar" class="page">
-      <div class="ph">
-        <div class="ph-left">
-          <h1 data-i18n="page_klasman_title">Klasman Yönetimi</h1>
-          <p data-i18n="page_klasman_sub">Ürün klasmanlarını tanımlayın ve istasyon sürelerini ayarlayın</p>
-        </div>
-        <div class="ph-buttons">
-          <button class="btn" onclick="pushToSheets()" title="Google Sheets'e gönder">
-            📤 Sheets'e Gönder
-          </button>
-          <button class="btn" onclick="pullFromSheets()" title="Google Sheets'ten çek">
-            📥 Sheets'ten Çek
-          </button>
-          <button class="btn btn-success" onclick="saveData()">
-            💾 Kaydet
-          </button>
-          <button class="btn btn-primary" onclick="openModal()">
-            ＋ Yeni Klasman
-          </button>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start" id="klasman-layout">
-        <!-- Sol: Klasman Grid -->
-        <div class="card" style="overflow:hidden">
-          <div class="card-header" style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-bottom:none;padding:14px 16px">
-            <h2 style="color:#fff;gap:8px">
-              <span style="background:rgba(255,255,255,.12);border-radius:7px;padding:4px 7px;font-size:13px">📋</span>
-              Klasmanlar
-            </h2>
-            <span id="kl-sayac" style="font-size:10px;color:rgba(255,255,255,.5);font-weight:500;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:99px"></span>
-          </div>
-          <div style="padding:10px 12px;border-bottom:1px solid var(--border2);background:var(--lblue3)">
-            <div style="position:relative">
-              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted2)">🔍</span>
-              <input id="search-input" placeholder="Klasman ara…" oninput="aramaYap()" style="font-size:12px;padding-left:30px">
-            </div>
-          </div>
-          <!-- Tamamlanma Filtresi -->
-          <div class="kl-filter-bar" id="kl-filter-bar">
-            <button class="kl-filter-btn active" id="kl-f-all"    onclick="setKlFilter('all')"   data-i18n="all_btn">All</button>
-            <button class="kl-filter-btn"         id="kl-f-done"   onclick="setKlFilter('done')"  data-i18n="completed_btn">✅ Completed</button>
-            <button class="kl-filter-btn"         id="kl-f-undone" onclick="setKlFilter('undone')">⚠️ Tamamlanmayanlar</button>
-            <span id="kl-filter-counts" style="margin-left:auto;font-size:10px;color:var(--muted);align-self:center"></span>
-          </div>
-          <!-- Grid view -->
-          <div id="klasman-liste" style="min-height:200px"></div>
-          <!-- Pagination -->
-          <div class="kl-pag" id="kl-pag">
-            <button class="kl-pag-btn" id="kl-prev" onclick="changePage(-1)">‹ Önceki</button>
-            <div class="kl-pag-pages" id="kl-pag-pages"></div>
-            <button class="kl-pag-btn" id="kl-next" onclick="changePage(1)">Sonraki ›</button>
-          </div>
-        </div>
-
-        <!-- Sağ: İstasyon Editörü -->
-        <div class="card" id="editor-card" style="min-height:400px">
-          <div id="editor-content">
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center">
-              <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--lblue2),var(--lblue3));display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:18px;border:1px solid var(--border)">⚙️</div>
-              <h3 style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:8px" data-i18n="select_klasman">Bir klasman seçin</h3>
-              <p style="font-size:12px;color:var(--muted);max-width:220px;line-height:1.6" data-i18n="select_klasman_hint">İstasyon sürelerini düzenlemek için soldan bir klasman seçin</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── AYARLAR — AŞAĞI BÖLÜM (Aç/Kapa) ── -->
-      <div style="margin-top:24px">
-
-        <!-- Sheets Bağlantısı Toggle -->
-        <div class="card" style="margin-bottom:10px;overflow:hidden">
-          <div class="card-header" onclick="toggleSection('sheets-body','sheets-chevron')"
-               style="cursor:pointer;user-select:none;background:linear-gradient(135deg,#E8F5E9 0%,#fff 70%);border-bottom:none;padding:14px 18px">
-            <h2 style="gap:8px;color:var(--navy)">
-              <span style="font-size:16px">📊</span>
-              <span data-i18n="sheets_conn_title">Google Sheets Bağlantısı</span>
-            </h2>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:10px;color:var(--muted);font-weight:500" data-i18n="sheets_conn_sub">Sheets ile senkronize et</span>
-              <span id="sheets-chevron" style="font-size:14px;color:var(--muted);transition:transform .2s">▼</span>
-            </div>
-          </div>
-          <div id="sheets-body" style="display:none">
-            <div style="padding:8px 18px 6px;background:linear-gradient(135deg,#E8F5E9 0%,#fff 70%);border-bottom:1px solid var(--border2);display:flex;gap:8px">
-              <span class="sheets-btn sheets-btn-push" onclick="pushToSheets()" data-i18n="send">📤 Gönder</span>
-              <span class="sheets-btn sheets-btn-pull" onclick="pullFromSheets()" data-i18n="pull">📥 Çek</span>
-            </div>
-            <div class="card-body">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-                <div>
-                  <label style="margin-bottom:6px;display:block;font-weight:600" data-i18n="sheets_url_label">Google Apps Script Web App URL'si (Veri Gönder/Al)</label>
-                  <div class="sheets-url-row">
-                    <input type="text" id="sheets-webapp-url" class="sheets-url-input" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveConfig()">
-                  </div>
-                  <div style="font-size:10px;color:var(--muted);line-height:1.6">
-                    Google Sheets → Uzantılar → Apps Script menüsünden bir Web App deploy edin.
-                    <a href="#" onclick="showSheetsHelp();return false" style="color:var(--blue)" data-i18n="how_to_setup">Nasıl kurulur? ℹ️</a>
-                  </div>
-                </div>
-                <div>
-                  <label style="margin-bottom:6px;display:block;font-weight:600" data-i18n="sheets_table_label">Google Sheets Tablo Bağlantısı (Görüntüle)</label>
-                  <div class="sheets-url-row">
-                    <input type="text" id="sheets-view-url" class="sheets-url-input" placeholder="https://docs.google.com/spreadsheets/d/…" oninput="saveConfig()">
-                    <a id="sheets-view-link" href="#" target="_blank" style="padding:8px 12px;background:var(--green);color:#fff;border-radius:6px;font-size:12px;text-decoration:none;font-weight:500;white-space:nowrap" data-i18n="open_link">🔗 Aç</a>
-                  </div>
-                  <div style="font-size:10px;color:var(--muted)" data-i18n="open_link_hint">Tabloyu tarayıcıda açmak için kullanılır</div>
-                </div>
-              </div>
-              <!-- API Token -->
-              <div style="margin-top:12px;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--lamber);border:1px solid #FFE082;border-radius:8px">
-                <span style="font-size:18px">🔑</span>
-                <div style="flex:1">
-                  <label style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px;display:block">API Token <span style="font-weight:400;color:var(--muted)" data-i18n="api_token_hint">(Apps Script'teki API_TOKEN değeriyle eşleşmeli)</span></label>
-                  <div style="display:flex;gap:8px;align-items:center">
-                    <input type="password" id="sheets-api-token" placeholder="lcw-secret-2024" oninput="saveConfig()" style="width:280px;font-family:'DM Mono',monospace;letter-spacing:2px">
-                    <button onclick="toggleTokenVisibility()" style="padding:6px 10px;border:1px solid var(--border);background:var(--white);border-radius:6px;cursor:pointer;font-size:12px" id="token-eye-btn">👁️</button>
-                    <span style="font-size:11px;color:var(--muted)" data-i18n="apiscript_match_hint">Apps Script dosyasındaki değerle eşleşmeli</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Şifre Ayarları Toggle -->
-        <div class="card" style="margin-bottom:24px;overflow:hidden">
-          <div class="card-header" onclick="toggleSection('pw-settings-body','pw-chevron')"
-               style="cursor:pointer;user-select:none;background:linear-gradient(135deg,#FFF8E1 0%,#fff 70%);border-bottom:none;padding:14px 18px">
-            <h2 style="gap:8px;color:var(--navy)">
-              <span style="font-size:16px">🔒</span>
-              <span data-i18n="pw_settings">Şifre Ayarları</span>
-            </h2>
-            <span id="pw-chevron" style="font-size:14px;color:var(--muted);transition:transform .2s">▼</span>
-          </div>
-          <div id="pw-settings-body" style="display:none">
-            <div class="card-body">
-              <div style="padding:10px 14px;background:var(--lblue3);border-radius:8px;border:1px solid var(--lblue);font-size:11px;color:var(--navy)">
-                <strong data-i18n="pw_settings">🔒 Şifre Ayarları:</strong>
-                <span style="color:var(--muted)" data-i18n="current_pw">Mevcut şifre: </span>
-                <code id="pw-display" style="background:var(--border2);padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace">****</code>
-                <button onclick="changePwPrompt()" style="margin-left:10px;padding:3px 10px;background:var(--amber);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer" data-i18n="change_pw">✏️ Şifreyi Değiştir</button>
-                <span id="pw-sheets-sync-status" style="margin-left:10px;font-size:10px;color:var(--muted)">📊 Sheets Config'e otomatik senkronize edilir</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /ayarlar alt bölüm -->
-    </div><!-- /page-klasmanlar -->
 <!-- ══════════ KLASMAN ANALİZİ ══════════ -->
 <div id="page-klasman-analiz" class="page">
   <div class="ph">
@@ -967,6 +811,84 @@
           </div>
           <div style="margin-top:10px;padding:10px 14px;background:var(--lblue3);border-radius:8px;border:1px solid var(--lblue);font-size:11px;color:var(--navy)">
             ℹ️ <span data-i18n="user_mgmt_hint">Kullanıcılar admin şifresi yerine kendi kullanıcı adı/şifresi ile giriş yapar. Burada verilen sekmeler dışındaki bölümleri göremezler. Dashboard her kullanıcıya açıktır.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sheets Bağlantısı Toggle (Klasman Yönetimi'nden taşındı) -->
+      <div class="card" style="margin-top:18px;margin-bottom:10px;overflow:hidden">
+        <div class="card-header" onclick="toggleSection('sheets-body','sheets-chevron')"
+             style="cursor:pointer;user-select:none;background:linear-gradient(135deg,#E8F5E9 0%,#fff 70%);border-bottom:none;padding:14px 18px">
+          <h2 style="gap:8px;color:var(--navy)">
+            <span style="font-size:16px">📊</span>
+            <span data-i18n="sheets_conn_title">Google Sheets Bağlantısı</span>
+          </h2>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:10px;color:var(--muted);font-weight:500" data-i18n="sheets_conn_sub">Sheets ile senkronize et</span>
+            <span id="sheets-chevron" style="font-size:14px;color:var(--muted);transition:transform .2s">▼</span>
+          </div>
+        </div>
+        <div id="sheets-body" style="display:none">
+          <div style="padding:8px 18px 6px;background:linear-gradient(135deg,#E8F5E9 0%,#fff 70%);border-bottom:1px solid var(--border2);display:flex;gap:8px">
+            <span class="sheets-btn sheets-btn-push" onclick="pushToSheets()" data-i18n="send">📤 Gönder</span>
+            <span class="sheets-btn sheets-btn-pull" onclick="pullFromSheets()" data-i18n="pull">📥 Çek</span>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <label style="margin-bottom:6px;display:block;font-weight:600" data-i18n="sheets_url_label">Google Apps Script Web App URL'si (Veri Gönder/Al)</label>
+                <div class="sheets-url-row">
+                  <input type="text" id="sheets-webapp-url" class="sheets-url-input" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveConfig()">
+                </div>
+                <div style="font-size:10px;color:var(--muted);line-height:1.6">
+                  Google Sheets → Uzantılar → Apps Script menüsünden bir Web App deploy edin.
+                  <a href="#" onclick="showSheetsHelp();return false" style="color:var(--blue)" data-i18n="how_to_setup">Nasıl kurulur? ℹ️</a>
+                </div>
+              </div>
+              <div>
+                <label style="margin-bottom:6px;display:block;font-weight:600" data-i18n="sheets_table_label">Google Sheets Tablo Bağlantısı (Görüntüle)</label>
+                <div class="sheets-url-row">
+                  <input type="text" id="sheets-view-url" class="sheets-url-input" placeholder="https://docs.google.com/spreadsheets/d/…" oninput="saveConfig()">
+                  <a id="sheets-view-link" href="#" target="_blank" style="padding:8px 12px;background:var(--green);color:#fff;border-radius:6px;font-size:12px;text-decoration:none;font-weight:500;white-space:nowrap" data-i18n="open_link">🔗 Aç</a>
+                </div>
+                <div style="font-size:10px;color:var(--muted)" data-i18n="open_link_hint">Tabloyu tarayıcıda açmak için kullanılır</div>
+              </div>
+            </div>
+            <!-- API Token -->
+            <div style="margin-top:12px;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--lamber);border:1px solid #FFE082;border-radius:8px">
+              <span style="font-size:18px">🔑</span>
+              <div style="flex:1">
+                <label style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px;display:block">API Token <span style="font-weight:400;color:var(--muted)" data-i18n="api_token_hint">(Apps Script'teki API_TOKEN değeriyle eşleşmeli)</span></label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input type="password" id="sheets-api-token" placeholder="lcw-secret-2024" oninput="saveConfig()" style="width:280px;font-family:'DM Mono',monospace;letter-spacing:2px">
+                  <button onclick="toggleTokenVisibility()" style="padding:6px 10px;border:1px solid var(--border);background:var(--white);border-radius:6px;cursor:pointer;font-size:12px" id="token-eye-btn">👁️</button>
+                  <span style="font-size:11px;color:var(--muted)" data-i18n="apiscript_match_hint">Apps Script dosyasındaki değerle eşleşmeli</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Şifre Ayarları Toggle (Klasman Yönetimi'nden taşındı) -->
+      <div class="card" style="margin-bottom:24px;overflow:hidden">
+        <div class="card-header" onclick="toggleSection('pw-settings-body','pw-chevron')"
+             style="cursor:pointer;user-select:none;background:linear-gradient(135deg,#FFF8E1 0%,#fff 70%);border-bottom:none;padding:14px 18px">
+          <h2 style="gap:8px;color:var(--navy)">
+            <span style="font-size:16px">🔒</span>
+            <span data-i18n="pw_settings">Şifre Ayarları</span>
+          </h2>
+          <span id="pw-chevron" style="font-size:14px;color:var(--muted);transition:transform .2s">▼</span>
+        </div>
+        <div id="pw-settings-body" style="display:none">
+          <div class="card-body">
+            <div style="padding:10px 14px;background:var(--lblue3);border-radius:8px;border:1px solid var(--lblue);font-size:11px;color:var(--navy)">
+              <strong data-i18n="pw_settings">🔒 Şifre Ayarları:</strong>
+              <span style="color:var(--muted)" data-i18n="current_pw">Mevcut şifre: </span>
+              <code id="pw-display" style="background:var(--border2);padding:2px 6px;border-radius:4px;font-family:'DM Mono',monospace">****</code>
+              <button onclick="changePwPrompt()" style="margin-left:10px;padding:3px 10px;background:var(--amber);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer" data-i18n="change_pw">✏️ Şifreyi Değiştir</button>
+              <span id="pw-sheets-sync-status" style="margin-left:10px;font-size:10px;color:var(--muted)">📊 Sheets Config'e otomatik senkronize edilir</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1780,14 +1702,13 @@
               <th style="padding:10px 12px;text-align:center;font-size:11px;width:40px;">#</th>
               <th style="padding:10px 12px;text-align:left;font-size:11px;">Talep No</th>
               <th style="padding:10px 12px;text-align:left;font-size:11px;">Klasman</th>
-              <th style="padding:10px 12px;text-align:center;font-size:11px;">Adet</th>
+              <th style="padding:10px 12px;text-align:center;font-size:11px;">Kontrol Edilen<br>Miktar</th>
               <th style="padding:10px 12px;text-align:center;font-size:11px;">Kontrol Süresi<br><span style="opacity:.6;font-weight:400">(sn/adet)</span></th>
-              <th style="padding:10px 12px;text-align:right;font-size:11px;" data-i18n="std_duration_th">Standart Süre</th>
               <th style="padding:10px 12px;text-align:right;font-size:11px;" data-i18n="actual_duration_th">Gerçekleşen Süre</th>
               <th style="padding:10px 12px;text-align:center;font-size:11px;">Ort. Kontrol<br><span style="opacity:.6;font-weight:400">(sn/adet)</span></th>
               <th style="padding:10px 12px;text-align:center;font-size:11px;" data-i18n="start_date_th">Başlangıç</th>
               <th style="padding:10px 12px;text-align:center;font-size:11px;" data-i18n="end_date_th">Bitiş</th>
-              <th style="padding:10px 12px;text-align:center;font-size:11px;">Oran<br><span style="opacity:.6;font-weight:400">(Std./Ger.)</span></th>
+              <th style="padding:10px 12px;text-align:center;font-size:11px;">Oran<br><span style="opacity:.6;font-weight:400">(Adet Bazlı)</span></th>
               <th style="padding:10px 12px;text-align:center;font-size:10px;opacity:.75;font-weight:400;">Inspection Tipi</th>
             </tr>
           </thead>
@@ -1799,10 +1720,10 @@
     <!-- Not -->
     <div style="margin-bottom:20px;padding:10px 14px;background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;font-size:10px;color:#5A7FA8;line-height:1.8;" class="no-print">
       <strong style="color:#F57F17;">ℹ️</strong>
-      Standart = (Kontrol Süresi × Adet) + İstasyon &nbsp;|&nbsp;
+      Kontrol Edilen Miktar = seviyelendirme/örnekleme sonrası fiilen kontrol edilen adet &nbsp;|&nbsp;
       Gerçekleşen = Başlangıç–Bitiş farkı &nbsp;|&nbsp;
-      Ort. Kontrol = Gerçekleşen ÷ Adet &nbsp;|&nbsp;
-      Oran = Standart ÷ Gerçekleşen × 100 &nbsp;|&nbsp;
+      Ort. Kontrol = Gerçekleşen ÷ Miktar &nbsp;|&nbsp;
+      Oran (Adet Bazlı) = Kontrol Edilen Miktar ÷ (Günlük Hedef Adet × Süre Oranı) × 100 &nbsp;|&nbsp;
       <span style="color:#00897B;">✓ hedef</span> = Ort. ≤ Standart kontrol süresi
     </div>
 
