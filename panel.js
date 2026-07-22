@@ -3173,10 +3173,17 @@ function showPerfSeviyeDetay(seviyeKey) {
     const otHtml = otDk > 0
       ? `<span style="color:#E65100;font-weight:600">🌙 ${otDk}dk</span>`
       : `<span style="color:var(--muted2)">—</span>`;
+    // Günlük adet ortalamaları: mesaisiz (normal saatte, overtime hariç) ve mesaili (toplam)
+    const _gunSayisiP  = insp.gunSayisi || 0;
+    const _normalAdetP = (insp.adet || 0) - (insp.toplamOvertimeAdet || 0);
+    const ortMesaisiz = _gunSayisiP > 0 ? Math.round(_normalAdetP / _gunSayisiP) : 0;
+    const ortMesaili   = _gunSayisiP > 0 ? Math.round((insp.adet || 0) / _gunSayisiP) : 0;
     return `
       <tr style="border-bottom:1px solid var(--border2)">
         <td style="padding:9px 10px;font-weight:600;color:var(--navy);cursor:pointer" onclick="document.getElementById('perf-seviye-popup').style.display='none'; showInspectorDetail('${insp.ins.replace(/'/g, "\\'")}')">${_escapeHtml(_formatDisplayName(insp.ins))}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${insp.gunSayisi || 0} gün${azVeriMi(insp.gunSayisi) ? '<br>' + azVeriRozetiHtml('badge') : ''}</td>
+        <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${formatTR(ortMesaisiz)}</td>
+        <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${formatTR(ortMesaili)}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${formatTR((insp.adet || 0))}</td>
         <td style="padding:9px 10px;text-align:center">${otHtml}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${perfColor}">${perf}%</td>
@@ -3194,6 +3201,8 @@ function showPerfSeviyeDetay(seviyeKey) {
           <tr>
             <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Inspector</th>
             <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Çalışma Günü</th>
+            <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Mesaisiz Günlük Ort.</th>
+            <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Mesaili Günlük Ort.</th>
             <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Toplam Ürün</th>
             <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Overtime</th>
             <th style="padding:9px 10px;text-align:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px">Performans</th>
