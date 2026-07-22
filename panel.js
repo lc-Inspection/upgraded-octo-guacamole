@@ -5321,11 +5321,14 @@ function performansHesapla(){
   const yapilanDepoCol = document.getElementById('col-yapilan-depo')?.value || '';
   const sonucCol = document.getElementById('col-sonuc')?.value || '';
   // "Inspection Tipi" sütununu otomatik bul (panelde ayrı seçim alanı yok)
-  // ÖNEMLİ DÜZELTME: c.toLowerCase() (locale'siz) Türkçe büyük "İ" harfini
-  // yanlış küçültüp eşleşmeyi bozabiliyordu — artık toLocaleLowerCase('tr-TR')
-  // kullanılıyor. Ayrıca birkaç yaygın yazım varyasyonu da tanınıyor.
+  // ÖNEMLİ DÜZELTME: toLocaleLowerCase('tr-TR') kullanmak YENİ bir hataya yol
+  // açtı — Türkçe locale'de düz ASCII "I" harfi "i" değil NOKTASIZ "ı" olarak
+  // küçülüyor (ünlü "Türkçe I sorunu"), bu da "Inspection" kelimesini
+  // bozup eşleşmeyi engelliyordu. Artık İ harfini elle "i"ye çevirip SONRA
+  // locale'siz toLowerCase() kullanıyoruz — hem "Inspection" hem "İnceleme"
+  // gibi yazımların ikisi de doğru çalışır.
   const inspectionTipiCol = excelCols.find(c => {
-    const norm = c.toLocaleLowerCase('tr-TR').replace(/[^a-z0-9]/g,'').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ı/g,'i').replace(/ç/g,'c');
+    const norm = c.replace(/İ/g,'i').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ı/g,'i').replace(/ç/g,'c');
     return norm.includes('inspectiontipi') || norm.includes('inspeksiyontipi') || norm.includes('incelemetipi') || norm.includes('kontroltipi');
   }) || '';
   if (inspectionTipiCol) {
