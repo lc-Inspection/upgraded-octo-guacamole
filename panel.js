@@ -3544,12 +3544,14 @@ function renderInspectorCards() {
     if (notrKayipSnKart > 0 && mesaiSnKart > notrKayipSnKart) mesaiSnKart -= notrKayipSnKart;
     const _hedefAdetKart = inspector.hedefAdetGunluk || 450;
     const _beklenenAdetKart = _hedefAdetKart * (mesaiSnKart / GUNLUK_CALISMA_SANIYE);
-    const hamPerfDuzeltilmis = (_adetKart > 0 && _beklenenAdetKart > 0)
-      ? Math.round((_adetKart / _beklenenAdetKart) * 100)
-      : hamPerf;
-    const duzPerf = hamPerfDuzeltilmis !== null && hamPerfDuzeltilmis !== undefined
-      ? Math.round(hamPerfDuzeltilmis * (100 / currentHedef))
-      : null;
+    // ÖNEMLİ DÜZELTME: eskiden burada ÖNCE (adet/beklenenAdet*100) yuvarlanıp
+    // SONRA o yuvarlanmış sayı tekrar (*100/hedef) ile İKİNCİ KEZ
+    // yuvarlanıyordu — bu çifte yuvarlama, getDispPerf() (Sheets/export'a
+    // giden TEK yuvarlamalı hesap) ile farklı sonuç verebiliyordu (örn. aynı
+    // kişi kartta %97, Sheets'te %95 gibi). Artık TEK seferde yuvarlanıyor.
+    const duzPerf = (_adetKart > 0 && _beklenenAdetKart > 0)
+      ? Math.round((_adetKart / _beklenenAdetKart) * 100 * (100 / currentHedef))
+      : (hamPerf !== null && hamPerf !== undefined ? Math.round(hamPerf * (100 / currentHedef)) : null);
     const performansVal = duzPerf ?? 0;
     const _efektifSeviye = getEfektifPerfSeviye(inspector, performansVal);
     const performansClass = _efektifSeviye.cls;
@@ -4164,9 +4166,21 @@ function exportInspectorDetail() {
   XLSX.utils.book_append_sheet(wb, wsKayit, 'Kayıt Detayı');
 
   // ── SAYFA 3: Inspector Özet ──
+  // ÖNEMLİ DÜZELTME: eskiden burada kayıp zaman düzeltmesi HİÇ
+  // uygulanmıyordu (sadece ham genelHizPerf kullanılıyordu) — Dashboard'dan
+  // farklı bir % gösterebiliyordu. Artık getDispPerf ile aynı mantık,
+  // TEK yuvarlamayla kullanılıyor (currentHedef yerine canlı input okunuyor).
+  const hedef = Math.max(1, parseFloat(document.getElementById('inp-verimlilik')?.value) || 100);
+  const _adetOzet = inspector.adet || 0;
+  let _mesaiSnOzet = inspector.mesaiSure || 0;
+  const _notrKayipSnOzet = getNotrKayipDakikaForInspector(inspector.ins) * 60;
+  if (_notrKayipSnOzet > 0 && _mesaiSnOzet > _notrKayipSnOzet) _mesaiSnOzet -= _notrKayipSnOzet;
+  const _hedefAdetOzet = inspector.hedefAdetGunluk || 450;
+  const _beklenenAdetOzet = _hedefAdetOzet * (_mesaiSnOzet / GUNLUK_CALISMA_SANIYE);
   const hamPerf  = inspector.genelHizPerf ?? 0;
-  const hedef    = Math.max(1, parseFloat(document.getElementById('inp-verimlilik')?.value) || 100);
-  const duzPerf  = Math.round(hamPerf * (100 / hedef));
+  const duzPerf  = (_adetOzet > 0 && _beklenenAdetOzet > 0)
+    ? Math.round((_adetOzet / _beklenenAdetOzet) * 100 * (100 / hedef))
+    : Math.round(hamPerf * (100 / hedef));
   const genelRows = [
     { 'Alan': 'Inspector Adı',        'Değer': inspector.ins },
     { 'Alan': 'Toplam Adet',          'Değer': inspector.adet || 0 },
@@ -4828,19 +4842,24 @@ function renderPerfTabloFromData(page) {
   // (getDispPerf çağırmıyoruz çünkü o, inspector.hedefVerimlilik'teki olası
   // ESKİ/durağan hedefi kullanır; burada kullanıcının O AN girdiği hedef
   // canlı yansımalı).
-  const _hamPerfDuzeltilmis = (r) => {
+  // ÖNEMLİ DÜZELTME: eskiden bu fonksiyon ÖNCE yuvarlayıp, çağıran kodlar
+  // SONRA (*100/hedef) ile İKİNCİ KEZ yuvarlıyordu — çifte yuvarlama, aynı
+  // kişi için Dashboard/Sheets'ten farklı bir % göstermesine yol açabiliyordu.
+  // Artık ham (yuvarlanmamış) oranı döndürüyor, yuvarlama SADECE çağıran
+  // yerde, hedefle birlikte TEK seferde yapılıyor.
+  const _oranDuzeltilmis = (r) => {
     const adet = r.adet || 0;
     let mesaiSn = r.mesaiSure || 0;
     const notrKayipSn = getNotrKayipDakikaForInspector(r.ins) * 60;
     if (notrKayipSn > 0 && mesaiSn > notrKayipSn) mesaiSn -= notrKayipSn;
     const hedefAdetGunluk = r.hedefAdetGunluk || 450;
     const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
-    return (adet > 0 && beklenenAdet > 0) ? Math.round((adet / beklenenAdet) * 100) : r.genelHizPerf;
+    return (adet > 0 && beklenenAdet > 0) ? (adet / beklenenAdet) * 100 : (r.genelHizPerf ?? null);
   };
   const ortVPerf = performansData.length > 0
     ? Math.round(performansData.reduce((s, r) => {
-        const hp = _hamPerfDuzeltilmis(r);
-        return s + (hp !== null && hp !== undefined ? Math.round(hp * (100 / hedef)) : 0);
+        const oran = _oranDuzeltilmis(r);
+        return s + (oran !== null && oran !== undefined ? Math.round(oran * (100 / hedef)) : 0);
       }, 0) / performansData.length) : 0;
   const ortalamaGun = performansData.length > 0
     ? Math.round(performansData.reduce((s, r) => s + (r.gunSayisi || 0), 0) / performansData.length) : 0;
@@ -4873,7 +4892,7 @@ function renderPerfTabloFromData(page) {
     const performans = row.genelHizPerf ?? 0;
     const performansClass = getPerformanceClass(performans);
     const cm = perfColorMap[performansClass] || perfColorMap['perf-verypoor'];
-    const _hpDuz = _hamPerfDuzeltilmis(row);
+    const _hpDuz = _oranDuzeltilmis(row);
     const vPerfDisplay = _hpDuz !== null && _hpDuz !== undefined
       ? Math.round(_hpDuz * (100 / hedef)) : null;
     const vPerfClass = vPerfDisplay === null ? '' : getPerformanceClass(vPerfDisplay);
