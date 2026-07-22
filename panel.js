@@ -2484,12 +2484,14 @@ async function pushPerformansManual(ev) {
       // ekranda gösterilen (düzeltilmiş) yüzde ile Sheets/DB'ye gönderilen
       // yüzde birbirini tutmaz. getDispPerf() çağırmıyoruz çünkü o,
       // inspector.hedefVerimlilik'teki olası ESKİ/durağan hedefi kullanır.
-      const standartSnPush = inspector.standartSure || 0;
+      const _adetPush = inspector.adet || 0;
       let mesaiSnPush = inspector.mesaiSure || 0;
       const notrKayipSnPush = getNotrKayipDakikaForInspector(inspector.ins) * 60;
       if (notrKayipSnPush > 0 && mesaiSnPush > notrKayipSnPush) mesaiSnPush -= notrKayipSnPush;
-      const hamPerfPush = (standartSnPush > 0 && mesaiSnPush > 0)
-        ? Math.round((standartSnPush / mesaiSnPush) * 100) : inspector.genelHizPerf;
+      const _hedefAdetPush = inspector.hedefAdetGunluk || 450;
+      const _beklenenAdetPush = _hedefAdetPush * (mesaiSnPush / GUNLUK_CALISMA_SANIYE);
+      const hamPerfPush = (_adetPush > 0 && _beklenenAdetPush > 0)
+        ? Math.round((_adetPush / _beklenenAdetPush) * 100) : inspector.genelHizPerf;
       const verimlilikPerfPush = hamPerfPush != null ? Math.round(hamPerfPush * (100 / _manualHedef)) : inspector.verimlilikPerf;
 
       return {
@@ -3475,13 +3477,13 @@ function getNotrKayipDakikaForInspector(inspectorName) {
 // performansHesapla() kasıtlı olarak kayıp zamandan bağımsız/ham tutulur
 // (bkz. oradaki not), düzeltme SADECE burada yapılır.
 function getDispPerf(inspector) {
-  const standartSn = inspector.standartSure || 0;
+  const adet = inspector.adet || 0;
   let mesaiSn = inspector.mesaiSure || 0;
   const statikDeger = (inspector.verimlilikPerf !== null && inspector.verimlilikPerf !== undefined)
     ? inspector.verimlilikPerf
     : (inspector.genelHizPerf ?? 0);
 
-  if (!standartSn || !mesaiSn) return statikDeger;
+  if (!adet || !mesaiSn) return statikDeger;
 
   const notrKayipSn = getNotrKayipDakikaForInspector(inspector.ins) * 60;
   if (notrKayipSn > 0 && mesaiSn > notrKayipSn) {
@@ -3492,8 +3494,11 @@ function getDispPerf(inspector) {
     return statikDeger;
   }
 
+  // ADET BAZLI: hedef adet, kayıp zaman düşülmüş mesai süresine orantılanır
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
+  const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
-  return Math.round((standartSn / mesaiSn) * 100 * (100 / hedef));
+  return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : statikDeger;
 }
 
 function getProgressColor(performans) {
@@ -4088,12 +4093,14 @@ function filterInspectors() {
     // renderDashboard kart hesabı ve getDispPerf ile aynı mantık, böylece
     // üstteki özet sayaçlar (Mükemmel/İyi/Orta/Zayıf) ve filtre/sıralama
     // kartlarla tutarlı kalır.
-    const standartSnF = inspector.standartSure || 0;
+    const _adetF = inspector.adet || 0;
     let mesaiSnF = inspector.mesaiSure || 0;
     const notrKayipSnF = getNotrKayipDakikaForInspector(inspector.ins) * 60;
     if (notrKayipSnF > 0 && mesaiSnF > notrKayipSnF) mesaiSnF -= notrKayipSnF;
-    const hamPerfF = (standartSnF > 0 && mesaiSnF > 0)
-      ? Math.round((standartSnF / mesaiSnF) * 100)
+    const _hedefAdetF = inspector.hedefAdetGunluk || 450;
+    const _beklenenAdetF = _hedefAdetF * (mesaiSnF / GUNLUK_CALISMA_SANIYE);
+    const hamPerfF = (_adetF > 0 && _beklenenAdetF > 0)
+      ? Math.round((_adetF / _beklenenAdetF) * 100)
       : inspector.genelHizPerf;
     return {
       ...inspector,
@@ -4206,12 +4213,14 @@ function renderInspectorCards() {
     // değerini (currentHedef) kullanıyor, inspector.hedefVerimlilik'teki
     // (son hesaplamadan kalma, potansiyel olarak eski) değeri değil.
     const hamPerf = inspector.genelHizPerf;
-    const standartSnKart = inspector.standartSure || 0;
+    const _adetKart = inspector.adet || 0;
     let mesaiSnKart = inspector.mesaiSure || 0;
     const notrKayipSnKart = getNotrKayipDakikaForInspector(inspector.ins) * 60;
     if (notrKayipSnKart > 0 && mesaiSnKart > notrKayipSnKart) mesaiSnKart -= notrKayipSnKart;
-    const hamPerfDuzeltilmis = (standartSnKart > 0 && mesaiSnKart > 0)
-      ? Math.round((standartSnKart / mesaiSnKart) * 100)
+    const _hedefAdetKart = inspector.hedefAdetGunluk || 450;
+    const _beklenenAdetKart = _hedefAdetKart * (mesaiSnKart / GUNLUK_CALISMA_SANIYE);
+    const hamPerfDuzeltilmis = (_adetKart > 0 && _beklenenAdetKart > 0)
+      ? Math.round((_adetKart / _beklenenAdetKart) * 100)
       : hamPerf;
     const duzPerf = hamPerfDuzeltilmis !== null && hamPerfDuzeltilmis !== undefined
       ? Math.round(hamPerfDuzeltilmis * (100 / currentHedef))
@@ -5478,11 +5487,13 @@ function renderPerfTabloFromData(page) {
   // ESKİ/durağan hedefi kullanır; burada kullanıcının O AN girdiği hedef
   // canlı yansımalı).
   const _hamPerfDuzeltilmis = (r) => {
-    const standartSn = r.standartSure || 0;
+    const adet = r.adet || 0;
     let mesaiSn = r.mesaiSure || 0;
     const notrKayipSn = getNotrKayipDakikaForInspector(r.ins) * 60;
     if (notrKayipSn > 0 && mesaiSn > notrKayipSn) mesaiSn -= notrKayipSn;
-    return (standartSn > 0 && mesaiSn > 0) ? Math.round((standartSn / mesaiSn) * 100) : r.genelHizPerf;
+    const hedefAdetGunluk = r.hedefAdetGunluk || 450;
+    const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
+    return (adet > 0 && beklenenAdet > 0) ? Math.round((adet / beklenenAdet) * 100) : r.genelHizPerf;
   };
   const ortVPerf = performansData.length > 0
     ? Math.round(performansData.reduce((s, r) => {
@@ -9417,9 +9428,9 @@ function showKayipDetayPopup(inspectorName) {
 // bkz. oradaki not) — böylece Excel'den sonra girilen kayıp zaman kayıtları da
 // doğru yansır ve aynı düşüm iki kez uygulanmaz.
 function getDuzeltilmisPerformans(inspector) {
-  const standartSn = inspector.standartSure || 0;
+  const adet = inspector.adet || 0;
   let mesaiSn = inspector.mesaiSure || 0;
-  if (!mesaiSn || !standartSn) return getDispPerf(inspector);
+  if (!mesaiSn || !adet) return getDispPerf(inspector);
 
   const kayipDkSn = (typeof getNotrKayipDakikaForInspector === 'function')
     ? getNotrKayipDakikaForInspector(inspector.ins) * 60
@@ -9428,8 +9439,10 @@ function getDuzeltilmisPerformans(inspector) {
     mesaiSn -= kayipDkSn;
   }
 
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
+  const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
-  return Math.round((standartSn / mesaiSn) * 100 * (100 / hedef));
+  return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : getDispPerf(inspector);
 }
 
 // Inspector'in saatlik ortalama adet hizi (tahmini kayip adet hesabi icin)
@@ -9443,11 +9456,13 @@ function getSaatlikAdetHizi(inspector) {
 
 // Orijinal ham performans (kayipsiz) - karsilastirma icin
 function getOrijinalHamPerf(inspector) {
-  const mesaiSn    = inspector.mesaiSure    || 0;
-  const standartSn = inspector.standartSure || 0;
-  if (!mesaiSn || !standartSn) return getDispPerf(inspector);
+  const mesaiSn = inspector.mesaiSure || 0;
+  const adet    = inspector.adet      || 0;
+  if (!mesaiSn || !adet) return getDispPerf(inspector);
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
+  const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
-  return Math.round((standartSn / mesaiSn) * 100 * (100 / hedef));
+  return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : getDispPerf(inspector);
 }
 
 
