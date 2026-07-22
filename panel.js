@@ -5321,10 +5321,19 @@ function performansHesapla(){
   const yapilanDepoCol = document.getElementById('col-yapilan-depo')?.value || '';
   const sonucCol = document.getElementById('col-sonuc')?.value || '';
   // "Inspection Tipi" sütununu otomatik bul (panelde ayrı seçim alanı yok)
+  // ÖNEMLİ DÜZELTME: c.toLowerCase() (locale'siz) Türkçe büyük "İ" harfini
+  // yanlış küçültüp eşleşmeyi bozabiliyordu — artık toLocaleLowerCase('tr-TR')
+  // kullanılıyor. Ayrıca birkaç yaygın yazım varyasyonu da tanınıyor.
   const inspectionTipiCol = excelCols.find(c => {
-    const norm = c.toLowerCase().replace(/[^a-z0-9]/g,'').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ı/g,'i').replace(/ç/g,'c');
-    return norm.includes('inspectiontipi');
+    const norm = c.toLocaleLowerCase('tr-TR').replace(/[^a-z0-9]/g,'').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ı/g,'i').replace(/ç/g,'c');
+    return norm.includes('inspectiontipi') || norm.includes('inspeksiyontipi') || norm.includes('incelemetipi') || norm.includes('kontroltipi');
   }) || '';
+  if (inspectionTipiCol) {
+    const _ornekDegerler = [...new Set(excelRows.slice(0, 200).map(r => String(r[inspectionTipiCol]||'').trim()).filter(Boolean))].slice(0, 8);
+    console.log(`[Inspection Tipi] Sütun bulundu: "${inspectionTipiCol}" — örnek değerler:`, _ornekDegerler);
+  } else {
+    console.warn('[Inspection Tipi] Sütun BULUNAMADI. Excel sütunları:', excelCols);
+  }
 
   const orneklemeMod = document.querySelector('input[name="ornekleme-mod"]:checked')?.value || 'kapali';
   const verimlilikHedef = Math.max(1, parseFloat(document.getElementById('inp-verimlilik')?.value) || 100);
@@ -5834,10 +5843,15 @@ function performansHesapla(){
       : null;
 
     // 2.Kalite kontrollerinin KENDİ performansı — yalnızca gösterim amaçlı.
-    // Genel "Düz. Performans" (mesai bazlı) hesabına dahil EDİLMEZ; sadece
-    // 2.Kalite satırlarının standart süresi / gerçekleşen süresi oranı olarak hesaplanır.
-    const perf2Kalite = (toplam2KaliteFiiliSure > 0)
-      ? Math.round((toplam2KaliteStandartSure / toplam2KaliteFiiliSure) * 100)
+    // Genel "Düz. Performans" hesabına dahil EDİLMEZ. ADET BAZLI: Overtime
+    // performansıyla aynı mantık — 2.Kalite kontrollerine harcanan gerçek
+    // süre, günlük hedef adede (450) orantılanıp beklenen adet bulunur,
+    // gerçekte yapılan 2.Kalite adediyle karşılaştırılır.
+    const beklenenAdet2Kalite = toplam2KaliteFiiliSure > 0
+      ? hedefAdetGunluk * (toplam2KaliteFiiliSure / GUNLUK_CALISMA_SANIYE)
+      : 0;
+    const perf2Kalite = (toplam2KaliteFiiliSure > 0 && beklenenAdet2Kalite > 0)
+      ? Math.round((toplam2KaliteAdet / beklenenAdet2Kalite) * 100)
       : null;
 
     map[ins] = {
