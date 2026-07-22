@@ -1519,20 +1519,30 @@ async function pushPerformansToSheets(liste) {
   if (!url || !token) return; // Bağlantı ayarı yapılmamışsa sessizce çık
 
   try {
-    // performansData'yı düz tablo formatına çevir (Sheets için okunabilir)
-    const rows = liste.map(row => ({
-      ins: row.ins,
-      adet: row.adet,
-      kayit: row.kayit,
-      gunSayisi: row.gunSayisi || 0,
-      standartSureDk: row.standartSure ? Math.round(row.standartSure / 60) : 0,
-      mesaiSureDk: row.mesaiSure ? Math.round(row.mesaiSure / 60) : 0,
-      genelHizPerf: row.genelHizPerf,
-      verimlilikPerf: row.verimlilikPerf,
-      klasmanOzet: Object.entries(row.klasmanlar || {})
-        .map(([k,v]) => `${k}:${v.adet}adet(${v.hizPerf}%)`)
-        .join(' | ')
-    }));
+// performansData'yı düz tablo formatına çevir (Sheets için okunabilir)
+    const rows = liste.map(row => {
+      const _gun = row.gunSayisi || 0;
+      const _normalAdet = (row.adet || 0) - (row.toplamOvertimeAdet || 0);
+      const _ortNormal = _gun > 0 ? Math.round(_normalAdet / _gun) : 0;
+      const _ortToplam = _gun > 0 ? Math.round((row.adet || 0) / _gun) : 0;
+
+      return {
+        ins: row.ins,
+        adet: row.adet,
+        kayit: row.kayit,
+        gunSayisi: _gun,
+        gunlukOrtNormal: _ortNormal,
+        gunlukOrtToplam: _ortToplam,
+        toplamOvertimeAdet: row.toplamOvertimeAdet || 0,
+        standartSureDk: row.standartSure ? Math.round(row.standartSure / 60) : 0,
+        mesaiSureDk: row.mesaiSure ? Math.round(row.mesaiSure / 60) : 0,
+        genelHizPerf: row.genelHizPerf,
+        verimlilikPerf: row.verimlilikPerf,
+        klasmanOzet: Object.entries(row.klasmanlar || {})
+          .map(([k,v]) => `${k}:${v.adet}adet(${v.hizPerf}%)`)
+          .join(' | ')
+      };
+    });
 
     const payload = {
       action: 'setPerformans',
