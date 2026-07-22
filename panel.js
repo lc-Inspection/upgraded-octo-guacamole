@@ -1592,7 +1592,14 @@ const listeTemiz = liste.map(inspector => {
     toplamMesaistiSaniye: inspector.toplamMesaistiSaniye || 0,
     gunlukOvertimeDetay: inspector.gunlukOvertimeDetay || {},
     hedefVerimlilik: _pushHedef,
-    verimlilikPerf: inspector.genelHizPerf != null ? Math.round(inspector.genelHizPerf * (100 / _pushHedef)) : inspector.verimlilikPerf,
+    // ÖNEMLİ DÜZELTME: Eskiden burada ham (genelHizPerf üzerinden yeniden
+    // hesaplanan, kayıp zaman düzeltmesi İÇERMEYEN) bir değer gönderiliyordu.
+    // Bu, canlı Dashboard kartındaki (getDispPerf — kayıp zaman düzeltmesi
+    // dahil) değerden FARKLI olabiliyordu; sınırda olan (örn. %85'e çok
+    // yakın) bir inspector, Dashboard'da "İyi" görünürken Sheets/Power Apps
+    // tarafında "Orta" görünebiliyordu. Artık getDispPerf() ile BİREBİR
+    // aynı, tek doğru kaynak kullanılıyor.
+    verimlilikPerf: getDispPerf(inspector),
     orneklemeMod: _pushOrneklemeMod,
     orneklemeTarihliAktif: _pushOrneklemeTarihliAktif,
     orneklemeDonemleri: _pushOrneklemeTarihliAktif ? orneklemeDonemleri : [],
