@@ -3041,10 +3041,15 @@ function updateSummaryStats(inspectors) {
 
   // 5'ten 4'e indirildi (kullanıcı talebiyle): Mükemmel+İyi tek "İyi" dilimi
   // oldu (≥85%). "Zayıf" → "Gelişime Açık" (50-69%), "Çok Zayıf" → "Zayıf" (<50%).
-  const good = inspectors.filter(i => getPerfVal(i) >= 85).length;
+  // EFEKTİF SEVİYE: "İyi" (≥85%) eşiğini geçse bile Mesaisiz Günlük Ort. <400
+  // olan biri buraya değil "Orta"ya sayılır — kartlar/popup ile tutarlı olsun.
+  const good = inspectors.filter(i => {
+    const p = getPerfVal(i);
+    return getEfektifPerfSeviye(i, p).cls === 'perf-good';
+  }).length;
   const average = inspectors.filter(i => {
     const p = getPerfVal(i);
-    return p >= 70 && p < 85;
+    return getEfektifPerfSeviye(i, p).cls === 'perf-average';
   }).length;
   const poor = inspectors.filter(i => {
     const p = getPerfVal(i);
@@ -3170,11 +3175,14 @@ function showPerfSeviyeDetay(seviyeKey) {
     return;
   }
 
-  // Bu seviyeye giren inspectorleri filtrele (getDispPerf: verimlilikPerf varsa onu, yoksa genelHizPerf'i kullanır)
+  // Bu seviyeye giren inspectorleri filtrele — EFEKTİF seviyeye göre (kart
+  // rozetiyle birebir tutarlı olması için): "İyi" eşiğini geçse bile
+  // Mesaisiz Günlük Ort. <400 olan biri buraya değil "Orta"ya düşer.
   const liste = performansData
     .filter(i => {
       const p = getDispPerf(i);
-      return p >= tanim.min && p < tanim.max;
+      const efektifKey = getEfektifPerfSeviye(i, p).cls.replace('perf-', '');
+      return efektifKey === seviyeKey;
     })
     .sort((a, b) => getDispPerf(b) - getDispPerf(a));
 
@@ -3188,7 +3196,8 @@ function showPerfSeviyeDetay(seviyeKey) {
 
   const rows = liste.map(insp => {
     const perf = getDispPerf(insp);
-    const perfColor = getProgressColor(perf);
+    const _efektif = getEfektifPerfSeviye(insp, perf);
+    const perfColor = _efektif.demoted ? '#F57F17' : getProgressColor(perf);
     const otDk = Math.round((insp.toplamMesaistiSaniye || 0) / 60);
     const otHtml = otDk > 0
       ? `<span style="color:#E65100;font-weight:600">🌙 ${otDk}dk</span>`
@@ -3200,7 +3209,7 @@ function showPerfSeviyeDetay(seviyeKey) {
     const ortMesaili   = _gunSayisiP > 0 ? Math.round((insp.adet || 0) / _gunSayisiP) : 0;
     return `
       <tr style="border-bottom:1px solid var(--border2)">
-        <td style="padding:9px 10px;font-weight:600;color:var(--navy);cursor:pointer" onclick="document.getElementById('perf-seviye-popup').style.display='none'; showInspectorDetail('${insp.ins.replace(/'/g, "\\'")}')">${_escapeHtml(_formatDisplayName(insp.ins))}</td>
+        <td style="padding:9px 10px;font-weight:600;color:var(--navy);cursor:pointer" onclick="document.getElementById('perf-seviye-popup').style.display='none'; showInspectorDetail('${insp.ins.replace(/'/g, "\\'")}')">${_escapeHtml(_formatDisplayName(insp.ins))}${_efektif.demoted ? `<div style="font-size:8px;color:#F57F17;font-weight:600;margin-top:2px">⚠️ İyi'den düşürüldü (Ort.&lt;400)</div>` : ''}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${insp.gunSayisi || 0} gün${azVeriMi(insp.gunSayisi) ? '<br>' + azVeriRozetiHtml('badge') : ''}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${formatTR(ortMesaisiz)}</td>
         <td style="padding:9px 10px;text-align:center;font-family:'DM Mono',monospace;color:var(--navy)">${formatTR(ortMesaili)}</td>
