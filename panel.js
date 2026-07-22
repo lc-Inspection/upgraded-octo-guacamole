@@ -2921,10 +2921,10 @@ function getPerformanceClass(performans) {
 // Bu sebeplerden kaynaklanan kayıp zaman, Mesai Süresi'nden (performans
 // paydasından) düşülür — inspector'ın kontrolü dışında olduğu için ne
 // performansını yapay olarak yükseltir ne de cezalandırır, sadece hesap
-// dışı bırakılır. "Sistemsel Hata" ve "Elektrik Kesintisi" BİLEREK dışarıda
-// bırakıldı (kullanıcı talebiyle) — bu ikisi performansı etkilemeye
+// dışı bırakılır. "Diğer", "Sistemsel Hata" ve "Elektrik Kesintisi" BİLEREK
+// dışarıda bırakıldı (kullanıcı talebiyle) — bunlar performansı etkilemeye
 // (düşürmeye) devam eder.
-const NOTR_KAYIP_SEBEPLERI = ['Ürün Olmaması', 'Insp. Lokasyon Değişimi', 'Diğer'];
+const NOTR_KAYIP_SEBEPLERI = ['Ürün Olmaması', 'Insp. Lokasyon Değişimi'];
 
 function getNotrKayipDakikaForInspector(inspectorName) {
   const nameNorm = String(inspectorName || '').toLowerCase().trim();
@@ -8450,18 +8450,22 @@ async function fetchTeknikHedefler() {
 }
 
 // ─── Düzeltilmiş Performansı Hesapla ───
-// Bir inspector için toplam kayıp dakikayı döner
+// Bir inspector için, performansı GERÇEKTEN etkileyen (nötr sayılan) toplam
+// kayıp dakikayı döner — getNotrKayipDakikaForInspector ile aynı liste
+// (Ürün Olmaması, Insp. Lokasyon Değişimi). Diğer sebepler (Diğer, Sistemsel
+// Hata, Elektrik Kesintisi vb.) buraya dahil edilmez, çünkü onlar zaten
+// performansı etkilemeye devam ediyor.
 function getKayipDakikaForInspector(inspectorName) {
   const nameNorm = String(inspectorName || '').toLowerCase().trim();
   return kayipZamanData
-    .filter(r => String(r.inspector || '').toLowerCase().trim() === nameNorm)
+    .filter(r => String(r.inspector || '').toLowerCase().trim() === nameNorm && NOTR_KAYIP_SEBEPLERI.includes(r.sebep))
     .reduce((sum, r) => sum + (r.sureDk || 0), 0);
 }
 
 // ── Değerlendirme Dışı Detay Popup'ı ──────────────────────────────────────
 function showKayipDetayPopup(inspectorName) {
   const nameNorm = String(inspectorName || '').toLowerCase().trim();
-  const kayitlar = kayipZamanData.filter(r => String(r.inspector || '').toLowerCase().trim() === nameNorm);
+  const kayitlar = kayipZamanData.filter(r => String(r.inspector || '').toLowerCase().trim() === nameNorm && NOTR_KAYIP_SEBEPLERI.includes(r.sebep));
   const toplamDk = kayitlar.reduce((s, r) => s + (r.sureDk || 0), 0);
 
   if (kayitlar.length === 0) return;
