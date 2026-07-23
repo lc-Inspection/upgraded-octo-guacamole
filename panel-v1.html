@@ -109,6 +109,10 @@
       <span class="nav-icon">📈</span>
       <span data-i18n="nav_perf_analysis">Performans Analizi</span>
     </div>
+    <div class="nav-item" onclick="showPage('ceyrek-performans')">
+      <span class="nav-icon">📅</span>
+      <span>Çeyrek Performans</span>
+    </div>
     <div class="nav-item" id="nav-ekip-analiz" onclick="showPage('ekip-analiz')" style="display:none">
       <span class="nav-icon">🧑‍🤝‍🧑</span>
       <span data-i18n="nav_ekip_analiz">Ekibim Analizi</span>
@@ -167,6 +171,9 @@
         <div class="ph-buttons">
           <button class="btn" onclick="pullPerformansFromSheets()" id="dash-pull-btn" title="Sheets'ten performans verisini çek">
             <span data-i18n="pull_from_sheets">📥 Sheets'ten Çek</span>
+          </button>
+          <button class="btn" onclick="ceyrekVerisiGonder(event)" id="dash-ceyrek-gonder-btn" title="Güncel performans verisini, o anki çeyreğin arşivine kaydeder" style="background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32">
+            📤 Çeyrek Verisi Gönder
           </button>
           <button class="btn btn-warning" onclick="clearDashboardData()" id="btn-temizle" style="display:none">
             <span data-i18n="clear">🗑️ Temizle</span>
@@ -566,6 +573,43 @@
       </div>
     </div>
 
+    <!-- ══════════ ÇEYREK PERFORMANS ══════════ -->
+    <div id="page-ceyrek-performans" class="page">
+      <div class="ph">
+        <div class="ph-left">
+          <h1>📅 Çeyrek Performans Arşivi</h1>
+          <p style="font-size:12px;color:var(--muted)">Q1 (Şub-Mar-Nis) · Q2 (May-Haz-Tem) · Q3 (Ağu-Eyl-Eki) · Q4 (Kas-Ara-Oca) — her çeyreğin verisi kalıcıdır, dönem değişince silinmez</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <input type="text" id="ceyrek-arama" placeholder="🔍 Inspector ara..." oninput="renderCeyrekPerformansTablosu()"
+            style="flex:1;min-width:220px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <span id="ceyrek-toplam-sayac" style="font-size:12px;color:var(--muted);white-space:nowrap">0 inspector</span>
+        </div>
+      </div>
+
+      <div class="card" style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#0B1F3A;color:#fff">
+              <th style="padding:10px 12px;text-align:left;font-size:11px">Inspector</th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;border-left:3px solid #90CAF9">Q1 <span style="opacity:.6;font-weight:400">(Şub-Mar-Nis)</span></th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;border-left:3px solid #A5D6A7">Q2 <span style="opacity:.6;font-weight:400">(May-Haz-Tem)</span></th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;border-left:3px solid #FFCC80">Q3 <span style="opacity:.6;font-weight:400">(Ağu-Eyl-Eki)</span></th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;border-left:3px solid #EF9A9A">Q4 <span style="opacity:.6;font-weight:400">(Kas-Ara-Oca)</span></th>
+            </tr>
+          </thead>
+          <tbody id="ceyrek-tablo-body"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:14px;padding:10px 14px;background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;font-size:11px;color:#5A7FA8;line-height:1.7">
+        ℹ️ Bu tablo, Dashboard sayfasındaki <strong>"📤 Çeyrek Verisi Gönder"</strong> butonuyla doldurulur. Butona her basıldığında, <strong>o anki ayın ait olduğu çeyreğin</strong> hücresi güncel veriyle üzerine yazılır — diğer çeyreklerdeki geçmiş veriler etkilenmez. Dashboard/Teknik İnceleme verisi silinse bile, buradaki arşiv kalıcı kalır.
+      </div>
+    </div>
+
     <!-- ══════════ CANLI GÖSTERİM ══════════ -->
     <div id="page-canli" class="page">
       <!-- Kurumsal Başlık Çubuğu -->
@@ -832,7 +876,7 @@
               <div style="flex:1">
                 <label style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px;display:block">API Token <span style="font-weight:400;color:var(--muted)" data-i18n="api_token_hint">(Apps Script'teki API_TOKEN değeriyle eşleşmeli)</span></label>
                 <div style="display:flex;gap:8px;align-items:center">
-                  <input type="password" id="sheets-api-token" placeholder="lcw-adet-secret-2024" oninput="saveConfig()" style="width:280px;font-family:'DM Mono',monospace;letter-spacing:2px">
+                  <input type="password" id="sheets-api-token" placeholder="lcw-secret-2024" oninput="saveConfig()" style="width:280px;font-family:'DM Mono',monospace;letter-spacing:2px">
                   <button onclick="toggleTokenVisibility()" style="padding:6px 10px;border:1px solid var(--border);background:var(--white);border-radius:6px;cursor:pointer;font-size:12px" id="token-eye-btn">👁️</button>
                   <span style="font-size:11px;color:var(--muted)" data-i18n="apiscript_match_hint">Apps Script dosyasındaki değerle eşleşmeli</span>
                 </div>
