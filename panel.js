@@ -2914,7 +2914,7 @@ function showPage(id, navEl){
   if(id === 'dashboard') {
     renderDashboard();
   } else if(id === 'ceyrek-performans') {
-    renderCeyrekPerformansTablosu();
+    renderCeyrekPerformansTablosu(true);
   } else if(id === 'canli') {
     initCanliPage();
   } else if(id === 'performans') {
@@ -3274,9 +3274,14 @@ function _ceyrekMetrikHucre(veri) {
     </div>`;
 }
 
-function renderCeyrekPerformansTablosu() {
+let _ceyrekSayfa = 1;
+const CEYREK_PER_PAGE = 20;
+
+function renderCeyrekPerformansTablosu(sifirlaSayfa) {
   const tbody = document.getElementById('ceyrek-tablo-body');
   if (!tbody) return;
+
+  if (sifirlaSayfa) _ceyrekSayfa = 1;
 
   const kayitlar = Object.values(ceyrekArsivi).sort((a, b) =>
     (a.displayName || '').localeCompare(b.displayName || '', 'tr'));
@@ -3291,10 +3296,17 @@ function renderCeyrekPerformansTablosu() {
   if (!filtreli.length) {
     tbody.innerHTML = `<tr><td colspan="5" style="padding:30px;text-align:center;color:var(--muted2)">
       Henüz çeyrek verisi gönderilmemiş. Dashboard sayfasından "📤 Çeyrek Verisi Gönder" butonuna basın.</td></tr>`;
+    _renderCeyrekSayfalama(0, 1);
     return;
   }
 
-  tbody.innerHTML = filtreli.map((k, i) => `
+  const totalPages = Math.max(1, Math.ceil(filtreli.length / CEYREK_PER_PAGE));
+  if (_ceyrekSayfa > totalPages) _ceyrekSayfa = totalPages;
+  if (_ceyrekSayfa < 1) _ceyrekSayfa = 1;
+  const baslangic = (_ceyrekSayfa - 1) * CEYREK_PER_PAGE;
+  const sayfaKayitlari = filtreli.slice(baslangic, baslangic + CEYREK_PER_PAGE);
+
+  tbody.innerHTML = sayfaKayitlari.map((k, i) => `
     <tr style="background:${i % 2 === 0 ? '#fff' : '#F9FBFF'};border-bottom:1px solid var(--border2)">
       <td style="padding:10px 12px;font-weight:600;color:var(--navy);white-space:nowrap">${_escapeHtml(_formatDisplayName(k.displayName))}</td>
       <td style="padding:10px 12px;border-left:3px solid #90CAF9">${_ceyrekMetrikHucre(k.Q1)}</td>
@@ -3302,6 +3314,34 @@ function renderCeyrekPerformansTablosu() {
       <td style="padding:10px 12px;border-left:3px solid #FFCC80">${_ceyrekMetrikHucre(k.Q3)}</td>
       <td style="padding:10px 12px;border-left:3px solid #EF9A9A">${_ceyrekMetrikHucre(k.Q4)}</td>
     </tr>`).join('');
+
+  _renderCeyrekSayfalama(filtreli.length, totalPages);
+}
+
+function _renderCeyrekSayfalama(toplamKayit, totalPages) {
+  const el = document.getElementById('ceyrek-sayfalama');
+  if (!el) return;
+  if (toplamKayit <= CEYREK_PER_PAGE) { el.innerHTML = ''; return; }
+
+  const baslangic = (_ceyrekSayfa - 1) * CEYREK_PER_PAGE + 1;
+  const bitis = Math.min(_ceyrekSayfa * CEYREK_PER_PAGE, toplamKayit);
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 4px;flex-wrap:wrap;gap:10px">
+      <span style="font-size:11px;color:var(--muted)">${baslangic}–${bitis} / ${toplamKayit} inspector gösteriliyor</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="changeCeyrekSayfa(-1)" ${_ceyrekSayfa <= 1 ? 'disabled' : ''}
+          style="padding:6px 14px;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:${_ceyrekSayfa <= 1 ? 'default' : 'pointer'};background:#fff;opacity:${_ceyrekSayfa <= 1 ? '.4' : '1'}">‹ Önceki</button>
+        <span style="font-size:12px;color:var(--navy);font-weight:600;padding:0 8px">${_ceyrekSayfa} / ${totalPages}</span>
+        <button onclick="changeCeyrekSayfa(1)" ${_ceyrekSayfa >= totalPages ? 'disabled' : ''}
+          style="padding:6px 14px;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:${_ceyrekSayfa >= totalPages ? 'default' : 'pointer'};background:#fff;opacity:${_ceyrekSayfa >= totalPages ? '.4' : '1'}">Sonraki ›</button>
+      </div>
+    </div>`;
+}
+
+function changeCeyrekSayfa(delta) {
+  _ceyrekSayfa += delta;
+  renderCeyrekPerformansTablosu();
 }
 
 
