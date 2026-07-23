@@ -585,20 +585,24 @@
       <div class="card" style="margin-bottom:16px">
         <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <input type="text" id="ceyrek-arama" placeholder="🔍 Inspector ara..." oninput="renderCeyrekPerformansTablosu(true)"
-            style="flex:1;min-width:220px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <span id="ceyrek-toplam-sayac" style="font-size:12px;color:var(--muted);white-space:nowrap">0 inspector</span>
+            style="flex:0 0 220px;width:220px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <select id="ceyrek-ekip-filtre" onchange="renderCeyrekPerformansTablosu(true)"
+            style="flex:0 0 220px;width:220px;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff">
+            <option value="">👥 Tüm Ekip Yöneticileri</option>
+          </select>
+          <span id="ceyrek-toplam-sayac" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto">0 inspector</span>
         </div>
       </div>
 
       <div class="card" style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <table style="width:100%;border-collapse:collapse;font-size:16px">
           <thead>
             <tr style="background:#0B1F3A;color:#fff">
-              <th style="padding:14px 16px;text-align:left;font-size:14px">Inspector</th>
-              <th style="padding:14px 16px;text-align:left;font-size:14px;border-left:3px solid #90CAF9">Q1 <span style="opacity:.6;font-weight:400;font-size:12px">(Şub-Mar-Nis)</span></th>
-              <th style="padding:14px 16px;text-align:left;font-size:14px;border-left:3px solid #A5D6A7">Q2 <span style="opacity:.6;font-weight:400;font-size:12px">(May-Haz-Tem)</span></th>
-              <th style="padding:14px 16px;text-align:left;font-size:14px;border-left:3px solid #FFCC80">Q3 <span style="opacity:.6;font-weight:400;font-size:12px">(Ağu-Eyl-Eki)</span></th>
-              <th style="padding:14px 16px;text-align:left;font-size:14px;border-left:3px solid #EF9A9A">Q4 <span style="opacity:.6;font-weight:400;font-size:12px">(Kas-Ara-Oca)</span></th>
+              <th style="padding:16px 18px;text-align:left;font-size:16px">Inspector</th>
+              <th style="padding:16px 18px;text-align:left;font-size:16px;border-left:3px solid #90CAF9">Q1 <span style="opacity:.6;font-weight:400;font-size:13px">(Şub-Mar-Nis)</span></th>
+              <th style="padding:16px 18px;text-align:left;font-size:16px;border-left:3px solid #A5D6A7">Q2 <span style="opacity:.6;font-weight:400;font-size:13px">(May-Haz-Tem)</span></th>
+              <th style="padding:16px 18px;text-align:left;font-size:16px;border-left:3px solid #FFCC80">Q3 <span style="opacity:.6;font-weight:400;font-size:13px">(Ağu-Eyl-Eki)</span></th>
+              <th style="padding:16px 18px;text-align:left;font-size:16px;border-left:3px solid #EF9A9A">Q4 <span style="opacity:.6;font-weight:400;font-size:13px">(Kas-Ara-Oca)</span></th>
             </tr>
           </thead>
           <tbody id="ceyrek-tablo-body"></tbody>
