@@ -3890,10 +3890,10 @@ function renderInspectorCards() {
             ${performansAciklama}
           </div>
           ${(inspector.overtimeMesaiSure || 0) > 0
-            ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0;padding:5px 10px;background:rgba(230,81,0,.08);border-radius:7px">
+            ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0;padding:5px 10px;background:rgba(230,81,0,.08);border-radius:7px;flex-wrap:wrap">
                 <span style="font-size:11px;color:#E65100">⏱ Overtime:</span>
                 <span style="font-size:13px;font-weight:700;color:#E65100">${inspector.overtimePerformans !== null && inspector.overtimePerformans !== undefined ? inspector.overtimePerformans+'%' : '—'}</span>
-                <span style="font-size:9px;color:var(--muted2)">(${Math.round((inspector.overtimeMesaiSure||0)/60)}dk ek mesaide)</span>
+                <span style="font-size:9px;color:var(--muted2)">(${Math.round((inspector.overtimeMesaiSure||0)/60)}dk ek mesaide · ${formatTR(inspector.toplamOvertimeAdet || 0)} adet)</span>
               </div>`
             : `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0;padding:5px 10px;background:rgba(0,0,0,.03);border-radius:7px">
                 <span style="font-size:11px;color:var(--muted2)">⏱ Overtime Yok</span>
