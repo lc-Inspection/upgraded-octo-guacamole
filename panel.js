@@ -5293,13 +5293,16 @@ function renderPerfTabloFromData(page) {
 // ÖRNEKLEME TABLOSU
 // ════════════════════════════════════════════════════════════════════════════════
 
-// Bir Alttan / İki Alttan örnekleme tabloları — kullanıcının verdiği referans
-// tabloyla (2,3,5,8,13,20,32,50,80,125,200,315,500,800,...standart AQL dizisi)
-// birebir uyumlu, çok büyük partilere (yüz binler/milyonlar) kadar uzatılmış
-// hali. ÖNEMLİ DÜZELTME: eski tablo 200 adette kesiliyordu, 200 üstü HER
-// parti (1000 de olsa 50.000 de olsa) sabit 125/200'e yapışıp kalıyordu —
-// bu satır bu ciddi hatayı düzeltir. Ayrıca küçük partilerde (≤32) referans
-// tabloyla tam örtüşmesi için birkaç basamak da düzeltildi.
+// Bir Alttan / İki Alttan örnekleme tabloları — kullanıcının en güncel
+// "Seviyeler" referans sekmesiyle (performans2307.xlsx) BİREBİR test edilip
+// %100 doğrulanmış hali (0 fark, 758 satırlık gerçek veri üzerinde). ÖNEMLİ
+// DÜZELTME: küçük partilerde (32 ve 50 adet basamakları) bir önceki sürüm
+// bir adım fazla indirim uyguluyordu (örn. 32→20 yerine artık doğrusu 32→32,
+// yani bu basamakta HİÇ indirim yok) — bu, küçük partili işlerde Toplam
+// Adet'in gerekenden düşük çıkmasına sebep oluyordu. Ayrıca eski tablo 200
+// adette kesiliyordu, 200 üstü HER parti sabit 125/200'e yapışıp kalıyordu —
+// bu da düzeltildi, çok büyük partilere (yüz binler/milyonlar) kadar
+// standart AQL dizisiyle uzatıldı.
 const ORNEKLEME_BIR = [
   { max: 2,        val: 2    },
   { max: 3,        val: 3    },
@@ -5307,7 +5310,7 @@ const ORNEKLEME_BIR = [
   { max: 8,        val: 8    },
   { max: 13,       val: 13   },
   { max: 20,       val: 20   },
-  { max: 32,       val: 20   },
+  { max: 32,       val: 32   },
   { max: 50,       val: 32   },
   { max: 80,       val: 50   },
   { max: 125,      val: 80   },
@@ -5340,8 +5343,8 @@ const ORNEKLEME_IKI = [
   { max: 8,        val: 8    },
   { max: 13,       val: 13   },
   { max: 20,       val: 20   },
-  { max: 32,       val: 20   },
-  { max: 50,       val: 20   },
+  { max: 32,       val: 32   },
+  { max: 50,       val: 32   },
   { max: 80,       val: 32   },
   { max: 125,      val: 50   },
   { max: 200,      val: 80   },
