@@ -1600,14 +1600,13 @@ const listeTemiz = liste.map(inspector => {
     toplamMesaistiSaniye: inspector.toplamMesaistiSaniye || 0,
     gunlukOvertimeDetay: inspector.gunlukOvertimeDetay || {},
     hedefVerimlilik: _pushHedef,
-    // ÖNEMLİ DÜZELTME: Eskiden burada ham (genelHizPerf üzerinden yeniden
-    // hesaplanan, kayıp zaman düzeltmesi İÇERMEYEN) bir değer gönderiliyordu.
-    // Bu, canlı Dashboard kartındaki (getDispPerf — kayıp zaman düzeltmesi
-    // dahil) değerden FARKLI olabiliyordu; sınırda olan (örn. %85'e çok
-    // yakın) bir inspector, Dashboard'da "İyi" görünürken Sheets/Power Apps
-    // tarafında "Orta" görünebiliyordu. Artık getDispPerf() ile BİREBİR
-    // aynı, tek doğru kaynak kullanılıyor.
-    verimlilikPerf: getDispPerf(inspector),
+    // ÖNEMLİ DÜZELTME: Dashboard kartındaki "PERFORMANS %" artık Mesaisiz
+    // Günlük Ort. ÷ Günlük Hedef Adet × 100 formülünü kullanıyor (eski
+    // getDispPerf/Verimlilik Perf formülü değil) — Sheets'e/SharePoint'e/
+    // Power Apps'e giden değer de BİREBİR aynı formülden gelsin diye burada
+    // da getEfektifPerfSeviye().adetBazliPerf kullanılıyor. Aksi halde kart
+    // %106 gösterirken Sheets %108 gibi FARKLI bir sayı gönderiyordu.
+    verimlilikPerf: getEfektifPerfSeviye(inspector, inspector.genelHizPerf || 0).adetBazliPerf,
     orneklemeMod: _pushOrneklemeMod,
     orneklemeTarihliAktif: _pushOrneklemeTarihliAktif,
     orneklemeDonemleri: _pushOrneklemeTarihliAktif ? orneklemeDonemleri : [],
@@ -3269,7 +3268,7 @@ async function ceyrekVerisiGonder(event) {
     // İsim güncel tutulsun (görünen ad değişmiş olabilir)
     ceyrekArsivi[key].displayName = insp.ins;
 
-    const verimlilik = getDispPerf(insp);
+    const verimlilik = getEfektifPerfSeviye(insp, insp.genelHizPerf || 0).adetBazliPerf;
     const ikinciInsp = getIkinciInspectionOraniForInspector(insp.ins).percent;
     const tekniknesne = getTeknikIncelemeSkorForInspector(insp.ins);
     const teknikSkor = tekniknesne.count > 0 ? tekniknesne.percent : null;
