@@ -2981,7 +2981,7 @@ function getDispPerf(inspector) {
   }
 
   // ADET BAZLI: hedef adet, kayıp zaman düşülmüş mesai süresine orantılanır
-  const hedefAdetGunluk = inspector.hedefAdetGunluk || 410;
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
   const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
   return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : statikDeger;
@@ -3042,7 +3042,7 @@ function getEfektifPerfSeviye(inspector, performansVal) {
   // zaman aynı metrikten (ham üretim adedi) geldiği için tutarlı olur —
   // eskiden "Orta" kategorisinde %112 gibi kafa karıştırıcı sayılar
   // görünebiliyordu, artık göremezsin.
-  const hedefAdetGunlukPerf = inspector.hedefAdetGunluk || 410;
+  const hedefAdetGunlukPerf = inspector.hedefAdetGunluk || 450;
   const adetBazliPerf = hedefAdetGunlukPerf > 0 ? Math.round((gunlukOrtNormal / hedefAdetGunlukPerf) * 100) : 0;
 
   return {
@@ -3551,7 +3551,7 @@ function onOvertimeDahilChange() {
       const payda = _overtimeDahil
         ? row.mesaiSure
         : (normalMesai > 0 ? normalMesai : row.mesaiSure);
-      const hedefAdetGunluk = row.hedefAdetGunluk || 410;
+      const hedefAdetGunluk = row.hedefAdetGunluk || 450;
       const beklenenAdet = payda > 0 ? hedefAdetGunluk * (payda / GUNLUK_CALISMA_SANIYE) : 0;
       row.genelHizPerf = (payda > 0 && beklenenAdet > 0) ? Math.round((adetPay / beklenenAdet) * 100) : row.genelHizPerf;
       row.genelPerformans = row.genelHizPerf;
@@ -3660,7 +3660,7 @@ function filterInspectors() {
     let mesaiSnF = inspector.mesaiSure || 0;
     const notrKayipSnF = getNotrKayipDakikaForInspector(inspector.ins) * 60;
     if (notrKayipSnF > 0 && mesaiSnF > notrKayipSnF) mesaiSnF -= notrKayipSnF;
-    const _hedefAdetF = inspector.hedefAdetGunluk || 410;
+    const _hedefAdetF = inspector.hedefAdetGunluk || 450;
     const _beklenenAdetF = _hedefAdetF * (mesaiSnF / GUNLUK_CALISMA_SANIYE);
     const hamPerfF = (_adetF > 0 && _beklenenAdetF > 0)
       ? Math.round((_adetF / _beklenenAdetF) * 100)
@@ -4076,7 +4076,8 @@ function showInspectorDetail(inspectorName) {
           bitis: k.bitis, tarihGecerli: k.tarihGecerli,
           ortalamaKontrolSn: k.adet > 0 && k.kayitFiiliSure > 0 ? Math.round(k.kayitFiiliSure / k.adet) : null,
           talepNo: k.talepNo || '',
-          inspectionTipi: k.inspectionTipi || ''
+          inspectionTipi: k.inspectionTipi || '',
+          is2Kalite: k.is2Kalite || false
         });
       });
     });
@@ -4115,7 +4116,17 @@ function showInspectorDetail(inspectorName) {
               if (!Array.isArray(kayitlarArr) || !kayitlarArr.length) return;
               let hedefKey = insKlasmanKeys.find(k => k === klasmanAd)
                 || insKlasmanKeys.find(k => norm(k) === norm(klasmanAd));
-              if (!hedefKey) return;
+              const klasmanYeniMi = !hedefKey;
+              if (klasmanYeniMi) {
+                // Bu klasman yerel oturumda hiç tanımlı değil (örn. başka bir
+                // cihazdan yüklenmiş / bu tarayıcıda henüz hesaplanmamış bir
+                // klasman). Eskiden bu durumda veri sessizce atlanıyordu — bu
+                // da bazı inspectorlerin detay sayfasında hiç kayıt
+                // görünmemesine yol açıyordu. Artık atmak yerine yeni bir
+                // klasman girişi olarak ekleniyor.
+                hedefKey = klasmanAd;
+                inspector.klasmanlar[hedefKey] = { kayitlar: [], adet: 0, standartSure: 0, kayitFiiliSure: 0, hizPerf: null };
+              }
               inspector.klasmanlar[hedefKey].kayitlar = kayitlarArr.map(r => ({
                 ...r,
                 kontrolAdetSuresi: r.kontrolAdetSuresi || 0,
@@ -4126,6 +4137,9 @@ function showInspectorDetail(inspectorName) {
                 baslangic: r.baslangic ? (() => { const d = new Date(r.baslangic); return isNaN(d.getTime()) ? null : d; })() : null,
                 bitis: r.bitis ? (() => { const d = new Date(r.bitis); return isNaN(d.getTime()) ? null : d; })() : null
               }));
+              if (klasmanYeniMi) {
+                inspector.klasmanlar[hedefKey].adet = inspector.klasmanlar[hedefKey].kayitlar.reduce((s, r) => s + (r.adet || 0), 0);
+              }
             });
             // Overlay hâlâ açıksa tabloyu güncelle
             const ov = document.getElementById('analiz-overlay');
@@ -4170,7 +4184,7 @@ function exportToExcel() {
     let _mesSnEx = inspector.mesaiSure || 0;
     const _kzSnEx = getNotrKayipDakikaForInspector(inspector.ins) * 60;
     if (_kzSnEx > 0 && _mesSnEx > _kzSnEx) _mesSnEx -= _kzSnEx;
-    const _hedefAdetEx = inspector.hedefAdetGunluk || 410;
+    const _hedefAdetEx = inspector.hedefAdetGunluk || 450;
     const _beklenenAdetEx = _hedefAdetEx * (_mesSnEx / GUNLUK_CALISMA_SANIYE);
     const _hamPEx = (_adetEx > 0 && _beklenenAdetEx > 0)
       ? Math.round((_adetEx / _beklenenAdetEx) * 100) : inspector.genelHizPerf;
@@ -4396,7 +4410,7 @@ function exportInspectorDetail() {
   let _mesaiSnOzet = inspector.mesaiSure || 0;
   const _notrKayipSnOzet = getNotrKayipDakikaForInspector(inspector.ins) * 60;
   if (_notrKayipSnOzet > 0 && _mesaiSnOzet > _notrKayipSnOzet) _mesaiSnOzet -= _notrKayipSnOzet;
-  const _hedefAdetOzet = inspector.hedefAdetGunluk || 410;
+  const _hedefAdetOzet = inspector.hedefAdetGunluk || 450;
   const _beklenenAdetOzet = _hedefAdetOzet * (_mesaiSnOzet / GUNLUK_CALISMA_SANIYE);
   const hamPerf  = inspector.genelHizPerf ?? 0;
   const duzPerf  = (_adetOzet > 0 && _beklenenAdetOzet > 0)
@@ -5081,7 +5095,7 @@ function renderPerfTabloFromData(page) {
     let mesaiSn = r.mesaiSure || 0;
     const notrKayipSn = getNotrKayipDakikaForInspector(r.ins) * 60;
     if (notrKayipSn > 0 && mesaiSn > notrKayipSn) mesaiSn -= notrKayipSn;
-    const hedefAdetGunluk = r.hedefAdetGunluk || 410;
+    const hedefAdetGunluk = r.hedefAdetGunluk || 450;
     const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
     return (adet > 0 && beklenenAdet > 0) ? (adet / beklenenAdet) * 100 : (r.genelHizPerf ?? null);
   };
@@ -5663,7 +5677,7 @@ function performansHesapla(){
   // dönemde çalıştığı gerçek mesai süresine ORANTILI olarak küçültülüp
   // büyütülür (tıpkı standart sürenin mesaiye oranlanması gibi — kısmi gün
   // çalışan birinin hedefi de otomatik olarak orantılı düşer).
-  const hedefAdetGunluk = Math.max(1, parseFloat(document.getElementById('inp-hedef-adet')?.value) || 410);
+  const hedefAdetGunluk = Math.max(1, parseFloat(document.getElementById('inp-hedef-adet')?.value) || 450);
 
   updateOrneklemeUI();
 
@@ -6184,7 +6198,7 @@ function performansHesapla(){
     // Genel "Düz. Performans" hesabına dahil EDİLMEZ. GÜN BAZLI: 2.Kalite
     // kontrolü yapılan GÜN SAYISI (süre değil — süre bazlı hesap, kısa/
     // çakışan zaman damgalarında oranı yapay şekilde şişiriyordu), günlük
-    // hedef adede (410) çarpılıp beklenen adet bulunur.
+    // hedef adede (450) çarpılıp beklenen adet bulunur.
     const gun2KaliteSayisi = inspectorData.gun2KaliteSet ? inspectorData.gun2KaliteSet.size : 0;
     const beklenenAdet2Kalite = gun2KaliteSayisi > 0
       ? hedefAdetGunluk * gun2KaliteSayisi
@@ -8022,7 +8036,7 @@ function getInspectorsForTeam(teamArr) {
       let _mesSnT = inspector.mesaiSure || 0;
       const _kzSnT = getNotrKayipDakikaForInspector(inspector.ins) * 60;
       if (_kzSnT > 0 && _mesSnT > _kzSnT) _mesSnT -= _kzSnT;
-      const _hedefAdetT = inspector.hedefAdetGunluk || 410;
+      const _hedefAdetT = inspector.hedefAdetGunluk || 450;
       const _beklenenAdetT = _hedefAdetT * (_mesSnT / GUNLUK_CALISMA_SANIYE);
       const _hamPT = (_adetT > 0 && _beklenenAdetT > 0)
         ? Math.round((_adetT / _beklenenAdetT) * 100) : inspector.genelHizPerf;
@@ -8930,7 +8944,7 @@ function getDuzeltilmisPerformans(inspector) {
     mesaiSn -= kayipDkSn;
   }
 
-  const hedefAdetGunluk = inspector.hedefAdetGunluk || 410;
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
   const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
   return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : getDispPerf(inspector);
@@ -8950,7 +8964,7 @@ function getOrijinalHamPerf(inspector) {
   const mesaiSn = inspector.mesaiSure || 0;
   const adet    = inspector.adet      || 0;
   if (!mesaiSn || !adet) return getDispPerf(inspector);
-  const hedefAdetGunluk = inspector.hedefAdetGunluk || 410;
+  const hedefAdetGunluk = inspector.hedefAdetGunluk || 450;
   const beklenenAdet = hedefAdetGunluk * (mesaiSn / GUNLUK_CALISMA_SANIYE);
   const hedef = inspector.hedefVerimlilik || 100;
   return beklenenAdet > 0 ? Math.round((adet / beklenenAdet) * 100 * (100 / hedef)) : getDispPerf(inspector);
