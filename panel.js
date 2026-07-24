@@ -4174,10 +4174,11 @@ function exportToExcel() {
   }
 
   const workbook = XLSX.utils.book_new();
+
   const mainData = performansData.map(inspector => {
     // Dashboard kartlarıyla BİREBİR aynı değer: getDispPerf() kullanılır.
-    // Eski elle-hesap (adet/beklenenAdet × hedef katsayısı) farklı formül
-    // olduğundan Dashboard ile uyuşmayan değerler üretiyordu — giderildi.
+    // Eski elle-hesap farklı formül olduğundan Dashboard ile uyuşmayan
+    // değerler üretiyordu (örn. %125 yerine %121) — bu satırla giderildi.
     const performans = getDispPerf(inspector);
     const ti = getTeknikIncelemeSkorForInspector(inspector.ins);
     const ii = getIkinciInspectionOraniForInspector(inspector.ins);
